@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const session = require('express-session')
@@ -10,8 +11,17 @@ app.use(express.json());
 
 app.use("/customer",session({secret:"fingerprint_customer",resave: true, saveUninitialized: true}))
 
-app.use("/customer/auth/*", function auth(req,res,next){
-//Write the authenication mechanism here
+app.use("/customer/auth/*", function auth(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) return res.sendStatus(401); // if there isn't any token
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next(); // pass the execution off to whatever request the client intended
+    });
 });
  
 const PORT =5000;
